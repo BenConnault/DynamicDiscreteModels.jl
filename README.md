@@ -50,9 +50,10 @@ In practice [DynamicDiscreteModels.jl](https://github.com/BenConnault/DynamicDis
 - some core methods: `simulate()`, `loglikelihood()`, `estep()` and `viterbi()`.
 - convenience methods: `em()` wraps `estep()` with generic M-step numerical optimizations. [DynamicDiscreteModels.jl](https://github.com/BenConnault/DynamicDiscreteModels.jl) also inherits `mle()` from [ParametricModels.jl](https://github.com/BenConnault/ParametricModels.jl), which wraps `loglikelihood()` with generic numerical optimization.
 
-The job of a front-end package is simply to specify `calibrate!()` which maps a statistical parameter of interest to [DynamicDiscreteModels.jl](https://github.com/BenConnault/DynamicDiscreteModels.jl)'s canonical dynamic discrete model structure. That's it. All of the above methods will then be available. Optionally, a front-end package may also extend `em()` and/or `mle()` with custom optimization strategies which can call [DynamicDiscreteModels.jl](https://github.com/BenConnault/DynamicDiscreteModels.jl)'s `estep()` and `loglikelihood()`.
+The job of a front-end package [MyModel.jl](http://imgc.allpostersimages.com/images/P-473-488-90/56/5632/N32MG00Z/posters/h-armstrong-roberts-mad-scientist-in-laboratory-mixing-chemicals.jpg) is simply to specify `calibrate!(mymodel,myparameter)` which maps `myparameter` to [DynamicDiscreteModels.jl](https://github.com/BenConnault/DynamicDiscreteModels.jl)'s canonical representation. All of the above methods will then be available. Optionally, a front-end package may also extend `em()` and/or `mle()` with specialized optimization wrapping [DynamicDiscreteModels.jl](https://github.com/BenConnault/DynamicDiscreteModels.jl)'s `estep()` and `loglikelihood()`.
 
 See **Usage** below for a simple example and see [HiddenMarkovModels.jl](https://github.com/BenConnault/HiddenMarkovModels.jl) for an actual front-end package built on top of [DynamicDiscreteModels.jl](https://github.com/BenConnault/DynamicDiscreteModels.jl).
+
 
 ## Installation
 
