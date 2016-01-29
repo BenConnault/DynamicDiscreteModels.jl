@@ -1,4 +1,4 @@
-# DynamicDiscreteModels
+# DynamicDiscreteModels.jl
 
 Back-end support for doing statistical inference with any model that can described as a "partially observed" (discrete) Markov chain, such as a Hidden Markov Model.
 
@@ -34,7 +34,7 @@ julia> #most likely path of latent states:
 julia> viterbi(model,data)
 ~~~
 
-
+## Scope of the package and role of front-end packages
 
 The scope of the package includes:
 
@@ -45,9 +45,12 @@ The scope of the package includes:
 - support for sparse transition matrices
 - support for Jacobians in all of the above
 
-In practice `DynamicDiscreteModels.jl` mostly implements `simulate()`, `loglikelihood()` (by closed-form forward filtering), `estep()` (by closed-form filtering/smoothing aka. forward/backward algorithm) and `viterbi()`. A convenience `em()` function is provided which wraps `estep()` with generic M-step numerical optimizations. Similarly a convenience `mle()` function is inherited from [ParametricModels.jl](https://github.com/BenConnault/ParametricModels.jl) and wraps `loglikelihood()` with generic numerical optimization.
+In practice [DynamicDiscreteModels.jl](https://github.com/BenConnault/DynamicDiscreteModels.jl) implements:
 
-The job of a front-end package is simply to specify `calibrate!()` which maps a statistical parameter of interest to `DynamicDiscreteModels.jl`'s canonical dynamic discrete model structure. All of the above methods will then be directly available. Optionally, a front-end package may also extend `em()` and/or `mle()` with custom optimization strategies around `DynamicDiscreteModels.jl`'s `estep()` and `loglikelihood()`.
+- some core methods: `simulate()`, `loglikelihood()`, `estep()` and `viterbi()`.
+- convenience methods: `em()` wraps `estep()` with generic M-step numerical optimizations. [DynamicDiscreteModels.jl](https://github.com/BenConnault/DynamicDiscreteModels.jl) also inherits `mle()` from [ParametricModels.jl](https://github.com/BenConnault/ParametricModels.jl), which wraps `loglikelihood()` with generic numerical optimization.
+
+The job of a front-end package is simply to specify `calibrate!()` which maps a statistical parameter of interest to [DynamicDiscreteModels.jl](https://github.com/BenConnault/DynamicDiscreteModels.jl)'s canonical dynamic discrete model structure. That's it. All of the above methods will then be available. Optionally, a front-end package may also extend `em()` and/or `mle()` with custom optimization strategies which can call [DynamicDiscreteModels.jl](https://github.com/BenConnault/DynamicDiscreteModels.jl)'s `estep()` and `loglikelihood()`.
 
 See **Usage** below for a simple example and see [HiddenMarkovModels.jl](https://github.com/BenConnault/HiddenMarkovModels.jl) for an actual front-end package built on top of [DynamicDiscreteModels.jl](https://github.com/BenConnault/DynamicDiscreteModels.jl).
 
@@ -65,7 +68,7 @@ For the purpose of this package, a "dynamic discrete model" is a discrete Markov
 - `m` is a (dx,dy,dx,dy) array that holds the Markov probabilities m[x,y,x',y'] of moving from (x,y) today to (x',y') tomorrow.
 - `mu` is a (dx,dy) array that holds the joint initial distribution of the chain.
 
-Any concrete instance of a `DynamicDiscreteModel` will specify a mapping from a statistical parameter θ to the transition matrix `m` in a `calibrate!(model,parameter)` function. Being a back-end package, `DynamicDiscreteModels.jl` is agnostic as to the specific mapping, but [examples/toymodel.jl](https://github.com/BenConnault/DynamicDiscreteModels.jl/examples/toymodel.jl) provides a simple example. In this example (x,y) is a Hidden Markov model where x moves from today to tomorrow according to the Markov transition matrix A(θ) and y is drawn conditional on x according to the transition matrix B(θ):
+Any front-end implementation of a `DynamicDiscreteModel` will specify a mapping from a statistical parameter θ to the transition matrix `m` in a `calibrate!(model,parameter)` function. Being a back-end package, `DynamicDiscreteModels.jl` is agnostic as to the specific mapping, but [example/toymodel.jl](blob/master/examples/toymodel.jl) provides a simple example. In this example (x,y) is a Hidden Markov model where x moves from today to tomorrow according to the Markov transition matrix A(θ) and y is drawn conditional on x according to the emission/transition matrix B(θ):
 
 ~~~
 .
@@ -110,7 +113,7 @@ We can initiate a toy model, calibrate it to a true parameter value θ*=(.65,.5)
 ~~~julia
 julia> thetastar=(.65, .5);
 julia> model=toymodel();
-julia> calibrate(model,thetastar);
+julia> calibrate!(model,thetastar);
 julia> data=simulate(model,100,100);
 julia> data[1]
 100-element Array{Int64,1}:
@@ -124,15 +127,15 @@ julia> data[1]
 ~~~
 
 
-With the model and some data, we can find the most likely parameter value behind the data, according to the model, by computing the maximum likelihood estimator. Two methods are available: direct numerical optimization of the log-likelihood via `mle()` and the EM algorithm via `em()`. To help the optimizer it is a good idea to first reparametrize the model on R rather than on [0,1]:
+With the model and some data, we can find the most likely parameter value behind the data, according to the model, by computing the maximum likelihood estimator. Two methods are available: direct numerical optimization of the log-likelihood via `mle()` and the EM algorithm via `em()`. To help the optimizer, it is a good idea to first reparametrize the model on R rather than on [0,1]:
 
 ~~~julia
 theta2eta(theta::Tuple)=[log(theta[1]/(1-theta[1])),log(theta[2]/(1-theta[2]))]
 eta2theta(eta::Array)=(exp(eta[1])/(1+exp(eta[1])),exp(eta[2])/(1+exp(eta[2])))
-calibrate(model::ToyModel,eta::Array)=calibrate(model,eta2theta(eta))
+calibrate!(model::ToyModel,eta::Array)=calibrate!(model,eta2theta(eta))
 ~~~
 
-Notice how `calibrate()` will use multiple dispatch to choose between the `eta` and `theta` parametrizations. `mle()` and `em()` will dispatch on `parameter::Array` by default so keep this signature for a parametrization which plays nicely with numerical optimization.
+Notice how `calibrate!()` will use multiple dispatch to choose between the `eta` and `theta` parametrizations. `mle()` and `em()` will dispatch on `parameter::Array` by default so keep this signature for a parametrization which plays nicely with numerical optimization.
 
 We then simply call:
 
@@ -143,7 +146,7 @@ julia> thetahat2=eta2theta(em(model,data))
 (0.6763156818261421,0.5025930701695173)
 ~~~
 
-Good news, up to some numerical precision error, `mle()` and `em()` agree on the maximum of the likelihood function. It also turns out that with this sample size, we can pinpoint the true parameter value (0.65,0.5) rather well. This is not the case with a smaller sample sizes:
+Good news, up to some numerical precision error, `mle()` and `em()` agree on the maximum of the likelihood function. It also turns out that with this sample size, we can pinpoint the true parameter value (0.65,0.5) rather well. This is not the case with a smaller sample size:
 
 ~~~julia
 julia> thetahat3=eta2theta(mle(model,data[1:10]))
@@ -154,4 +157,4 @@ Here is a plot of the likelihood surface using 10 and 100 time series, along wit
 
 ![](pic/readme.png)
 
-(See [toymodel.jl](examples/toymodel.jl) for the code used generate the picture.)
+(See [example/toymodel.jl](blob/master/examples/toymodel.jl) for the code used generate the picture.)
