@@ -68,7 +68,7 @@ For the purpose of this package, a "dynamic discrete model" is a discrete Markov
 - `m` is a (dx,dy,dx,dy) array that holds the Markov probabilities m[x,y,x',y'] of moving from (x,y) today to (x',y') tomorrow.
 - `mu` is a (dx,dy) array that holds the joint initial distribution of the chain.
 
-Any front-end implementation of a `DynamicDiscreteModel` will specify a mapping from a statistical parameter θ to the transition matrix `m` in a `calibrate!(model,parameter)` function. Being a back-end package, `DynamicDiscreteModels.jl` is agnostic as to the specific mapping, but [example/toymodel.jl](blob/master/examples/toymodel.jl) provides a simple example. In this example (x,y) is a Hidden Markov model where x moves from today to tomorrow according to the Markov transition matrix A(θ) and y is drawn conditional on x according to the emission/transition matrix B(θ):
+Any front-end implementation of a `DynamicDiscreteModel` will specify a mapping from a statistical parameter θ to the transition matrix `m` in a `calibrate!(model,parameter)` function. Being a back-end package, `DynamicDiscreteModels.jl` is agnostic as to the specific mapping, but [examples/toymodel.jl](examples/toymodel.jl) provides a simple example. In this example (x,y) is a Hidden Markov model where x moves from today to tomorrow according to the Markov transition matrix A(θ) and y is drawn conditional on x according to the emission/transition matrix B(θ):
 
 ~~~
 .
@@ -157,4 +157,4 @@ Here is a plot of the likelihood surface using 10 and 100 time series, along wit
 
 ![](pic/readme.png)
 
-(See [example/toymodel.jl](blob/master/examples/toymodel.jl) for the code used generate the picture.)
+(See [examples/toymodel.jl](examples/toymodel.jl) for the code used generate the picture.)
