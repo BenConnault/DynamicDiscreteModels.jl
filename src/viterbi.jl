@@ -1,6 +1,8 @@
 #could be written more efficiently
 #but is not meant to be evaluated repeatedly like the likelihood
 #so not a priority
+
+
 function viterbi(model::DynamicDiscreteModel,data::Array{Int,1})
 	T=length(data)
 	dx=size(model.mu,1)
@@ -23,6 +25,7 @@ function viterbi(model::DynamicDiscreteModel,data::Array{Int,1})
 	viterbipath
 end
 
+#wrapper for panel data
 function viterbi(model::DynamicDiscreteModel,data::Array{Array,1})
 	n=length(data)
 	viterbipaths=Array(Array{Int,1},n)

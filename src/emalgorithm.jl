@@ -1,76 +1,17 @@
-# filtersmoother() builds the weights ("E step")
-# EMalgorithm() does numerical optimization using the weights to build the objective function ("M-steps").
-# In examples with specific structure (eg Hidden Markov Models), the M-step might be solved in closed-form. When this is the case, one should not use this generic EMalgorithm() implementation. filtersmoother() remains useful.
+# EMalgorithm() currently does not use Jacobians. If profiling shows that most of the time is spent in the M-step rather than teh E-step, 
+# this might something useful to do. 
 
-# EMalgorithm() currently does not use Jacobians. If profiling shows that most of the time is spent in the M-step rather than teh E-step, this might something useful to do. 
+"""
+Generic EM algorithm.
 
+	em(model,data,thetai,L=1000)
 
-function filtersmoother(model::DynamicDiscreteModel,data::Array{Int,1},w::Array{Float64,4})
-	T=length(data)
-	dx,dy=size(model.mu)
+Maximization of the likelihood by EM algorithm. The E-step is handled by `estep()`'s 
+forward-backward algorithm and the M-step is a generic numerical optimization step. 
+`thetai` is a starting value and `L` a maximum numer of iterations. 
 
-	filter=Array(Float64,dx,T)
-	filter[:,1]=model.mu[:,data[1]]/sum(model.mu[:,data[1]])
-	for t=2:T
-		rho=0.0
-		for jx=1:dx
-			filter[jx,t]=0
-			for ix=1:dx
-				filter[jx,t]+=model.m[ix,data[t-1],jx,data[t]]*filter[ix,t-1]
-			end
-			rho+=filter[jx,t]
-		end
-		for jx=1:dx
-			filter[jx,t]/=rho
-		end
-	end
-
-	smoother=Array(Float64,dx,T)
-	smoother[:,T]=1
-	for t=T-1:-1:1
-		rho=0.0
-		for ix=1:dx
-			smoother[ix,t]=0
-			for jx=1:dx
-				smoother[ix,t]+=model.m[ix,data[t],jx,data[t+1]]*smoother[jx,t+1]
-			end
-			rho+=smoother[ix,t]
-		end
-		for ix=1:dx
-			smoother[ix,t]/=rho
-		end
-	end
-
-	conditional=Array(Float64,dx,dx)
-	for t=1:T-1
-		tempsum=0.0
-		for jx=1:dx
-			for ix=1:dx
-				conditional[ix,jx]=model.m[ix,data[t],jx,data[t+1]]
-				conditional[ix,jx]*=filter[ix,t]
-				conditional[ix,jx]*=smoother[jx,t+1]
-				tempsum+=conditional[ix,jx]
-			end
-		end
-		for jx=1:dx
-			for ix=1:dx
-				#note that there is no risk of division by zero 
-				#reason: this is called only on _observed_ data which must thus have non-zero probability
-				w[ix,data[t],jx,data[t+1]]+=conditional[ix,jx]/tempsum
-			end
-		end
-	end
-
-end
-
-function filtersmoother(model::DynamicDiscreteModel,data::Array{Array,1},w::Array{Float64,4})
-	for i=1:length(data)
-		filtersmoother(model,data[i],w)
-	end
-end
-
-function EMalgorithm(model::DynamicDiscreteModel,data,thetai,L=1000)
-	tol=0.01
+"""
+function em(model::DynamicDiscreteModel,data,thetai=rand(dim(model)),L=1000,tol=1e-10)
 	dx,dy=size(model.mu)
 	w=zeros(dx,dy,dx,dy)
 	llks=zeros(L)

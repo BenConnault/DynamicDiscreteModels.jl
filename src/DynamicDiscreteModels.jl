@@ -8,21 +8,19 @@ import Distributions: Dirichlet, wsample
 
 
 export calibrate, simulate, loglikelihood, mle, dim,
-	DynamicDiscreteModel, viterbi, EMalgorithm, filtersmoother
+	DynamicDiscreteModel, estep, em, viterbi, hmm2ddm!
 
 
 
-#source files
 include("utils.jl")
 
 include("dynamicdiscretemodel.jl")
+include("estep.jl")
 include("emalgorithm.jl")
 include("viterbi.jl")
 include("loglikelihood.jl")
 
+include("hmm.jl")
 
-
-# include("dev.jl")
-# export loglikelihood2, mle2, calibrate2
 
 end

@@ -1,7 +1,55 @@
 # DynamicDiscreteModels
 
-Back-end support for doing statistical inference with "partially observed Markov chain": z_t=(x_t,y_t) is Markov, y_t is observed but x_t is not observed. Hidden Markov Models are a popular example of such models.
+Back-end support for doing statistical inference with any model that can described as a "partially observed" (discrete) Markov chain, such as a Hidden Markov Model.
 
+
+Model construction and data simulation:
+
+~~~julia
+julia> #use a constructor defined in a front-end package:
+julia> model=myawesomemodel()
+julia> calibrate!(model,trueparameter)
+julia> #or simply:
+julia> model=myawesomemodel(trueparameter)
+julia> #generate data from the model:
+julia> data=simulate(model,1000);         #1 time series with 1000 observations
+julia> data=simulate(model,100,10);       #10 time series with 100 observations each
+julia> data=simulate(model,[100,120]);    #2 time series with 100 and 120 observations resp.
+~~~
+
+Parameter estimation:
+
+~~~julia
+julia> #plain maximum likelihood:
+julia> thetahat=mle(model,data)
+julia> #maximum likelihood via EM algorithm:
+julia> thetahat=em(model,data)
+~~~
+
+Hidden state inference (Viterbi filtering):
+~~~julia
+julia> #pretend thetahat is the "true" parameter:
+julia> calibrate!(model,thetahat)
+julia> #most likely path of latent states:
+julia> viterbi(model,data)
+~~~
+
+
+
+The scope of the package includes:
+
+- filter/smoother algorithms (aka. forward/backward)
+- parameter estimation: maximum likelihood and EM algorithm
+- hidden state inference: Viterbi filtering
+- support for deep modelling of the transition matrices
+- support for sparse transition matrices
+- support for Jacobians in all of the above
+
+In practice `DynamicDiscreteModels.jl` mostly implements `simulate()`, `loglikelihood()` (by closed-form forward filtering), `estep()` (by closed-form filtering/smoothing aka. forward/backward algorithm) and `viterbi()`. A convenience `em()` function is provided which wraps `estep()` with generic M-step numerical optimizations. Similarly a convenience `mle()` function is inherited from [ParametricModels.jl](https://github.com/BenConnault/ParametricModels.jl) and wraps `loglikelihood()` with generic numerical optimization.
+
+The job of a front-end package is simply to specify `calibrate!()` which maps a statistical parameter of interest to `DynamicDiscreteModels.jl`'s canonical dynamic discrete model structure. All of the above methods will then be directly available. Optionally, a front-end package may also extend `em()` and/or `mle()` with custom optimization strategies around `DynamicDiscreteModels.jl`'s `estep()` and `loglikelihood()`.
+
+See **Usage** below for a simple example and see [HiddenMarkovModels.jl](https://github.com/BenConnault/HiddenMarkovModels.jl) for an actual front-end package built on top of [DynamicDiscreteModels.jl](https://github.com/BenConnault/DynamicDiscreteModels.jl).
 
 ## Installation
 
@@ -10,23 +58,100 @@ julia> Pkg.clone("git://github.com/BenConnault/ParametricModels.jl.git")
 julia> Pkg.clone("git://github.com/BenConnault/DynamicDiscreteModels.jl.git")
 ~~~
 
-## Goals and Usage 
+## Usage
 
-The objectives of the packages include:
+For the purpose of this package, a "dynamic discrete model" is a discrete Markov chain z=(x,y), where x=1...dx is latent and y=1...dy is observed. The package defines an abstract type `DynamicDiscreteModel` with two fields:
 
-- filter/smoother (aka. forward/backward) algorithms
-- parameter estimation: maximum likelihood and EM algorithm (known as the Baum-Welch algorithm in this context)
-- hidden state inference: Viterbi filtering
-- support for deep modelling of the transition matrices (the transition matrices can be arbitrary functions of a deeper statistical parameter)
-- support for sparse transition matrices
-- support for Jacobians in all of the above
+- `m` is a (dx,dy,dx,dy) array that holds the Markov probabilities m[x,y,x',y'] of moving from (x,y) today to (x',y') tomorrow.
+- `mu` is a (dx,dy) array that holds the joint initial distribution of the chain.
 
-The `DynamicDiscreteModels` module mostly defines an abstract type `DynamicDiscreteModel` which inherits from `ParametricModel`.  Any concrete instance of a `DynamicDiscreteModel` must implement:
+Any concrete instance of a `DynamicDiscreteModel` will specify a mapping from a statistical parameter θ to the transition matrix `m` in a `calibrate!(model,parameter)` function. Being a back-end package, `DynamicDiscreteModels.jl` is agnostic as to the specific mapping, but [examples/toymodel.jl](https://github.com/BenConnault/DynamicDiscreteModels.jl/examples/toymodel.jl) provides a simple example. In this example (x,y) is a Hidden Markov model where x moves from today to tomorrow according to the Markov transition matrix A(θ) and y is drawn conditional on x according to the transition matrix B(θ):
 
-- a field `m` which is the transition matrix for (x,y) indexed as m[x,y,x',y']
-- a field `mu` which is the initial distribution of (x_1,y_1) indexed as mu[x_1,y_1]
-- several other fields used for efficient implementations of filtering/smoothing.
+~~~
+.
+       [ θ₁     1-θ₁ ]           [θ₂          (1-θ₂)/2   (1-θ₂)/2  ]
+A(θ) = [ 1-θ₁   θ₁   ]    B(θ) = [(1-θ₂)/2    (1-θ₂)/2   θ₂        ]
+~~~    
+
+The statistical parameter θ is of dimension 2, x can take values 1, 2 and y can take values 1, 2, 3. Here is the code defining a toy model:
+
+~~~julia
+importall DynamicDiscreteModels
+
+type ToyModel <: DynamicDiscreteModel
+
+	#DynamicDiscreteModel fields
+	m::Array{Float64,4}			  	#the transition matrix given as m[x,y,x',y']
+	mu::Array{Float64,2}  			#initial distribution (dx,dy)
+
+	#DynamicDiscreteModel's technical fields
+	rho::Array{Float64,1}
+	phi::Array{Float64,1}
+	psi::Array{Float64,1}
+end
+
+dx,dy=2,3
+
+toymodel()=ToyModel(Array(Float64,dx,dy,dx,dy),fill(1/6,2,3),Array(Float64,1),Array(Float64,dx),Array(Float64,dx))
+
+function calibrate!(model::ToyModel,theta::Tuple)
+	p1,p2=theta[1],theta[2]
+	a=[p1 1-p1;1-p1 p1]
+	p3=(1-p2)/2
+	b=[p2 p3 p3; p3 p3 p2]
+  #a convenience function is provided for calibrating dynamic discrete models with hidden Markov structure
+	hmm2ddm!(model,a,b)         
+end
+~~~
 
 
+We can initiate a toy model, calibrate it to a true parameter value θ*=(.65,.5), and simulate 100 time series of length 100:
+
+~~~julia
+julia> thetastar=(.65, .5);
+julia> model=toymodel();
+julia> calibrate(model,thetastar);
+julia> data=simulate(model,100,100);
+julia> data[1]
+100-element Array{Int64,1}:
+ 1
+ 3
+ 1
+ 1
+ 2
+ 3
+ ...
+~~~
 
 
+With the model and some data, we can find the most likely parameter value behind the data, according to the model, by computing the maximum likelihood estimator. Two methods are available: direct numerical optimization of the log-likelihood via `mle()` and the EM algorithm via `em()`. To help the optimizer it is a good idea to first reparametrize the model on R rather than on [0,1]:
+
+~~~julia
+theta2eta(theta::Tuple)=[log(theta[1]/(1-theta[1])),log(theta[2]/(1-theta[2]))]
+eta2theta(eta::Array)=(exp(eta[1])/(1+exp(eta[1])),exp(eta[2])/(1+exp(eta[2])))
+calibrate(model::ToyModel,eta::Array)=calibrate(model,eta2theta(eta))
+~~~
+
+Notice how `calibrate()` will use multiple dispatch to choose between the `eta` and `theta` parametrizations. `mle()` and `em()` will dispatch on `parameter::Array` by default so keep this signature for a parametrization which plays nicely with numerical optimization.
+
+We then simply call:
+
+~~~julia
+julia> thetahat=eta2theta(mle(model,data))
+(0.6762467624375702,0.5026000995341361)
+julia> thetahat2=eta2theta(em(model,data))
+(0.6763156818261421,0.5025930701695173)
+~~~
+
+Good news, up to some numerical precision error, `mle()` and `em()` agree on the maximum of the likelihood function. It also turns out that with this sample size, we can pinpoint the true parameter value (0.65,0.5) rather well. This is not the case with a smaller sample sizes:
+
+~~~julia
+julia> thetahat3=eta2theta(mle(model,data[1:10]))
+(0.8420953672648955,0.4391327611992014)
+~~~
+
+Here is a plot of the likelihood surface using 10 and 100 time series, along with their maximums `thetahat` and `thetahat3` computed above (in blue) and the true parameter value (in green):
+
+![](pic/readme.png)
+
+(See [toymodel.jl](examples/toymodel.jl) for the code used generate the picture.)

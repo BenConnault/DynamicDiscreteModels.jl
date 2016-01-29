@@ -1,5 +1,6 @@
-# loglikelihood_jac assumes that a calibrated model includes the calibrated jacobian stored in model.mjac[ix,iy,jx,jy,itheta]
+#Evaluating the likelihood requires only filtering ("forward").
 
+# NON-JACOBIAN METHODS
 
 function filterstep!(model::DynamicDiscreteModel,iy,jy)
 	dx=length(model.phi)
@@ -33,7 +34,7 @@ function loglikelihood(model::DynamicDiscreteModel,data::Array{Int,1})
 		filterstep!(model,data[t-1],data[t])
 		lambda+=log(model.rho[1])
 	end
-	lambda
+	lambda/length(data)
 end
 
 

@@ -1,24 +1,3 @@
-type HiddenMarkovModel <: DynamicDiscreteModel
-	#HMM specific field
-
-	#DynamicDiscreteModel fields
-	m::Array{Float64,4}			  	#the transition matrix given as m[x,y,x',y'] 
-	mu::Array{Float64,2}  			#initial distribution (dx,dy)
-	rho::Array{Float64,1}
-	phi1::Array{Float64,1}	
-	phi2::Array{Float64,1}
-end
-
-
-function hmm(mu::Array{Float64,2},a::Array{Float64,2},b::Array{Float64,2})
-	dx,dy=size(mu)
-	model=HiddenMarkovModel(Array(Float64,dx,dy,dx,dy),mu,Array(Float64,1),Array(Float64,dx),Array(Float64,dx))
-	hmm2ddm!(model,a,b)
-	model
-end
-
-#ab=(a,b)
-calibrate(model::HMM,ab)=hmm2ddm!(model,ab[1],ab[2])
 
 # m[x,y,x',y']=a[x,x']* b[x',y']
 function hmm2ddm!(model::DynamicDiscreteModel,a,b)
@@ -34,7 +13,7 @@ function hmm2ddm!(model::DynamicDiscreteModel,a,b)
 	end
 end
 
-#multiple dispatch will detect jacobian or no jacobian
+#multiple dispatch will detech jacobian or no jacobian
 function hmm2ddm!(model::DynamicDiscreteModel,a,b,ajac,bjac)
 	dx,dy,dtheta=size(bjac)
 	for jy=1:dy
@@ -50,6 +29,3 @@ function hmm2ddm!(model::DynamicDiscreteModel,a,b,ajac,bjac)
 		end
 	end
 end
-
-
-

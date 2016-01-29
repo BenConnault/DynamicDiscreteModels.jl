@@ -88,38 +88,3 @@ end
 
 
 fatdiagonal(dx::Int)=fatdiagonal([.6,.3],dx)
-
-
-
-# not obvious how to do this but I don't need it for MLE:
-# function ddm2hmm(ddm)
-# end
-
-
-
-function z2q!(z::Array{Float64,1},q::Array{Float64,1})
-	q[:]=exp(z)/(1+sum(exp(z)))
-end
-
-#WATCH OUT: there are inconsistencies in the above and below. Should refactor. The above is used for ToyModel.
-function z2q!(z::Array{Float64,1},q::Array{Float64,2})
-	dx=size(q)[1]
-	for ix=1:dx
-		iz=(ix-1)*(dx-1)+1
-		jz=ix*(dx-1)
-		q[ix,1:dx-1]=exp(z[iz:jz])/(1+sum(exp(z[iz:jz])))
-		q[ix,dx]=1/(1+sum(exp(z[iz:jz])))
-	end
-end
-
-function q2z!(q::Array{Float64,2},z::Array{Float64,1},dtheta::Int=0)
-	dx=size(q)[1]
-	for ix=1:dx
-		iz=dtheta+(ix-1)*(dx-1)+1
-		jz=dtheta+ix*(dx-1)
-		z[iz:jz]=log(q[ix,1:dx-1]/(1-sum(q[ix,1:dx-1])))
-	end
-end
-
-
-
