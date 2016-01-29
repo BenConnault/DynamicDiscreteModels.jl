@@ -16,7 +16,7 @@ function em(model::DynamicDiscreteModel,data,thetai=rand(dim(model)),L=1000,tol=
 	w=zeros(dx,dy,dx,dy)
 	llks=zeros(L)
 	theta=copy(thetai)
-	calibrate(model,theta)
+	calibrate!(model,theta)
 	
 	nonzeroindicies=find(model.m.!=0.0)
 
@@ -26,7 +26,7 @@ function em(model::DynamicDiscreteModel,data,thetai=rand(dim(model)),L=1000,tol=
 	while go
 		l+=1
 		w[:]=0
-		filtersmoother(model,data,w)
+		emstep(model,data,w)
 		function ff(xtheta)
 			calibrate(model,xtheta)
 			#w[] has zero at lest wherever model.m has zeros, and maybe more
@@ -46,7 +46,7 @@ function em(model::DynamicDiscreteModel,data,thetai=rand(dim(model)),L=1000,tol=
 	end
 	println()
 	println(" estimating dynamic discrete model via EM algorithm...")
-	println("  $l iterations, final log-likelihood: $(round(llks[l],2))")
+	println("  $l iterations, final log-likelihood: $(round(llks[l],4))")
 	# plot(llks[1:l])
 	theta
 end	

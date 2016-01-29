@@ -13,7 +13,7 @@ models, such as Hidden Markov Models: if this the case call `filtersmoother` to 
 implement your own optimization routine.
 
 """
-function filtersmoother(model::DynamicDiscreteModel,data::Array{Int,1},w::Array{Float64,4})
+function estep(model::DynamicDiscreteModel,data::Array{Int,1},w::Array{Float64,4})
 	T=length(data)
 	dx,dy=size(model.mu)
 
@@ -72,7 +72,7 @@ function filtersmoother(model::DynamicDiscreteModel,data::Array{Int,1},w::Array{
 end
 
 # Wrapper to handle several time-series of observations.
-function filtersmoother(model::DynamicDiscreteModel,data::Array{Array,1},w::Array{Float64,4})
+function estep(model::DynamicDiscreteModel,data::Array{Array,1},w::Array{Float64,4})
 	for i=1:length(data)
 		filtersmoother(model,data[i],w)
 	end

@@ -96,14 +96,19 @@ end
 
 dx,dy=2,3
 
-toymodel()=ToyModel(Array(Float64,dx,dy,dx,dy),fill(1/6,2,3),Array(Float64,1),Array(Float64,dx),Array(Float64,dx))
+toymodel()=ToyModel(
+  Array(Float64,dx,dy,dx,dy),
+  fill(1/6,2,3),
+  Array(Float64,1),
+  Array(Float64,dx),
+  Array(Float64,dx))
 
 function calibrate!(model::ToyModel,theta::Tuple)
 	p1,p2=theta[1],theta[2]
 	a=[p1 1-p1;1-p1 p1]
 	p3=(1-p2)/2
 	b=[p2 p3 p3; p3 p3 p2]
-  #a convenience function is provided for calibrating dynamic discrete models with hidden Markov structure
+  #a convenience function is provided for calibrating models with hidden Markov structure
 	hmm2ddm!(model,a,b)         
 end
 ~~~
