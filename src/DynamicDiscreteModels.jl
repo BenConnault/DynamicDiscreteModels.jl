@@ -1,13 +1,14 @@
 module DynamicDiscreteModels
 
-importall ParametricModels
+include("statisticalmodels-stopgap.jl")
+include("statisticalmodels-sugar.jl")
 
 import Optim
 import Distributions: Dirichlet, wsample 
 
 
 
-export calibrate!, simulate, loglikelihood, mle, dim,
+export coef!, rand, loglikelihood, mle, dim,
 	DynamicDiscreteModel, estep, em, viterbi, hmm2ddm!
 
 

@@ -16,7 +16,7 @@ function em(model::DynamicDiscreteModel,data,thetai=rand(dim(model)),L=1000,tol=
 	w=zeros(dx,dy,dx,dy)
 	llks=zeros(L)
 	theta=copy(thetai)
-	calibrate!(model,theta)
+	coef!(model,theta)
 	
 	nonzeroindicies=find(model.m.!=0.0)
 
@@ -26,9 +26,9 @@ function em(model::DynamicDiscreteModel,data,thetai=rand(dim(model)),L=1000,tol=
 	while go
 		l+=1
 		w[:]=0
-		emstep(model,data,w)
+		estep(model,data,w)
 		function ff(xtheta)
-			calibrate(model,xtheta)
+			coef!(model,xtheta)
 			#w[] has zero at lest wherever model.m has zeros, and maybe more
 			#we still must be careful of not calling log(0)
 			#this is what nonzeroindicies is for
@@ -40,7 +40,7 @@ function em(model::DynamicDiscreteModel,data,thetai=rand(dim(model)),L=1000,tol=
 		end
 		ret = Optim.optimize(ff, theta,method=:cg,iterations=L)
 		theta[:]=ret.minimum
-		calibrate(model,theta)
+		coef!(model,theta)
 		llks[l]=loglikelihood(model,data)
 		go=(abs(llks[l]-llks[l-1])>tol && l<L)
 	end

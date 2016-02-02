@@ -1,11 +1,12 @@
+using Base.Test
 include("../examples/toymodel.jl")
 
 theta0=(.65, .5)
 model=toymodel()
-calibrate!(model,theta0)
-data=simulate(model,100,100)
-thetahat=eta2theta(mle(model,data,etai))
-tetahat2=eta2theta(em(model,data,etai))
+coef!(model,theta0)
+data=rand(model,100,100)
+thetahat=eta2theta(mle(model,data))
+thetahat2=eta2theta(em(model,data))
 
 @test norm(collect(thetahat)-collect(thetahat2))<1e-3
 

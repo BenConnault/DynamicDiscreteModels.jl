@@ -6,7 +6,7 @@ end
 
 
 
-function simulate(model::DynamicDiscreteModel,T::Int)
+function rand(model::DynamicDiscreteModel,T::Int)
 	#throw error if not calibrated
 	data=Array(Int,T)
 	dx,dy=size(model.mu)

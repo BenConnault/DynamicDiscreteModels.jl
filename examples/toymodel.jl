@@ -1,5 +1,5 @@
 importall DynamicDiscreteModels 
-#need to `importall` rather than `using` because we will extend `calibrate()` and `dim()`
+#need to `importall` rather than `using` because we will extend `coef!()` and `dim()`
 #in real applications this would typically be handled in a front-end package ToyModel.jl
 
 type ToyModel <: DynamicDiscreteModel
@@ -19,7 +19,7 @@ dy=3
 
 toymodel()=ToyModel(Array(Float64,dx,dy,dx,dy),fill(1/6,2,3),Array(Float64,1),Array(Float64,dx),Array(Float64,dx))
 
-function calibrate!(model::ToyModel,theta::Tuple)
+function coef!(model::ToyModel,theta::Tuple)
 	p1,p2=theta[1],theta[2]
 	a=[p1 1-p1;1-p1 p1]
 	p3=(1-p2)/2
@@ -29,7 +29,7 @@ end
 
 theta2eta(theta::Tuple)=[log(theta[1]/(1-theta[1])),log(theta[2]/(1-theta[2]))]
 eta2theta(eta::Array)=(exp(eta[1])/(1+exp(eta[1])),exp(eta[2])/(1+exp(eta[2])))
-calibrate!(model::ToyModel,eta::Array)=calibrate(model,eta2theta(eta))
+coef!(model::ToyModel,eta::Array)=coef!(model,eta2theta(eta))
 
 dim(model::ToyModel)=2
 
@@ -37,8 +37,8 @@ dim(model::ToyModel)=2
 function lkcontour()
 	theta0=(.65, .5)
 	model=toymodel()
-	calibrate!(model,theta0)
-	data=simulate(model,100,100)
+	coef!(model,theta0)
+	data=rand(model,100,100)
 	thetahat=eta2theta(mle(model,data))
 	thetahat2=eta2theta(em(model,data))
 	thetahat3=eta2theta(mle(model,data[1:10]))
@@ -47,7 +47,7 @@ function lkcontour()
 	xx=linspace(.1,.9,50)
 	yy=linspace(.1,.9,50)
 	function ff(x,y,n)
-		calibrate(model,(x,y))
+		coef!(model,(x,y))
 		loglikelihood(model,data[1:n])
 	end
 	gg1=[ff(x,y,10)::Float64 for x=xx,y=yy]

@@ -1,4 +1,4 @@
-abstract DynamicDiscreteModel <: ParametricModel
+abstract DynamicDiscreteModel <: StatisticalModel
 
 	# m::Array{Float64,4}			  	#the transition matrix given as m[x,y,x',y'] 
 	# mu::Array{Float64,2}  			#initial distribution (dx,dy)

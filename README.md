@@ -8,13 +8,13 @@ Model construction and data simulation:
 ~~~julia
 julia> #use a constructor defined in a front-end package:
 julia> model=myawesomemodel()
-julia> calibrate!(model,trueparameter)
+julia> coef!(model,trueparameter)
 julia> #or simply:
 julia> model=myawesomemodel(trueparameter)
 julia> #generate data from the model:
-julia> data=simulate(model,1000);         #1 time series with 1000 observations
-julia> data=simulate(model,100,10);       #10 time series with 100 observations each
-julia> data=simulate(model,[100,120]);    #2 time series with 100 and 120 observations resp.
+julia> data=rand(model,1000);         #1 time series with 1000 observations
+julia> data=rand(model,100,10);       #10 time series with 100 observations each
+julia> data=rand(model,[100,120]);    #2 time series with 100 and 120 observations resp.
 ~~~
 
 Parameter estimation:
@@ -29,7 +29,7 @@ julia> thetahat=em(model,data)
 Hidden state inference (Viterbi filtering):
 ~~~julia
 julia> #pretend thetahat is the "true" parameter:
-julia> calibrate!(model,thetahat)
+julia> coef!(model,thetahat)
 julia> #most likely path of latent states:
 julia> viterbi(model,data)
 ~~~
@@ -47,10 +47,10 @@ The scope of the package includes:
 
 In practice [DynamicDiscreteModels.jl](https://github.com/BenConnault/DynamicDiscreteModels.jl) implements:
 
-- some core methods: `simulate()`, `loglikelihood()`, `estep()` and `viterbi()`.
-- convenience methods: `em()` wraps `estep()` with generic M-step numerical optimizations. [DynamicDiscreteModels.jl](https://github.com/BenConnault/DynamicDiscreteModels.jl) also inherits `mle()` from [ParametricModels.jl](https://github.com/BenConnault/ParametricModels.jl), which wraps `loglikelihood()` with generic numerical optimization.
+- some core methods: `rand()`, `loglikelihood()`, `estep()` and `viterbi()`.
+- convenience methods: `em()` wraps `estep()` with generic M-step numerical optimizations. [DynamicDiscreteModels.jl](https://github.com/BenConnault/DynamicDiscreteModels.jl) also inherits `mle()` from `StatisticalModels`, which wraps `loglikelihood()` with generic numerical optimization.
 
-The job of a front-end package [MyModel.jl](http://imgc.allpostersimages.com/images/P-473-488-90/56/5632/N32MG00Z/posters/h-armstrong-roberts-mad-scientist-in-laboratory-mixing-chemicals.jpg) is simply to specify `calibrate!(mymodel,myparameter)` which maps `myparameter` to [DynamicDiscreteModels.jl](https://github.com/BenConnault/DynamicDiscreteModels.jl)'s canonical representation. All of the above methods will then be available. Optionally, a front-end package may also extend `em()` and/or `mle()` with specialized optimization wrapping [DynamicDiscreteModels.jl](https://github.com/BenConnault/DynamicDiscreteModels.jl)'s `estep()` and `loglikelihood()`.
+The job of a front-end package [MyModel.jl](http://imgc.allpostersimages.com/images/P-473-488-90/56/5632/N32MG00Z/posters/h-armstrong-roberts-mad-scientist-in-laboratory-mixing-chemicals.jpg) is simply to specify `coef!(mymodel,myparameter)` which maps `myparameter` to [DynamicDiscreteModels.jl](https://github.com/BenConnault/DynamicDiscreteModels.jl)'s canonical representation. All of the above methods will then be available. Optionally, a front-end package may also extend `em()` and/or `mle()` with specialized optimization wrapping [DynamicDiscreteModels.jl](https://github.com/BenConnault/DynamicDiscreteModels.jl)'s `estep()` and `loglikelihood()`.
 
 See **Usage** below for a simple example and see [HiddenMarkovModels.jl](https://github.com/BenConnault/HiddenMarkovModels.jl) for an actual front-end package built on top of [DynamicDiscreteModels.jl](https://github.com/BenConnault/DynamicDiscreteModels.jl).
 
@@ -58,7 +58,6 @@ See **Usage** below for a simple example and see [HiddenMarkovModels.jl](https:/
 ## Installation
 
 ~~~julia
-julia> Pkg.clone("git://github.com/BenConnault/ParametricModels.jl.git")
 julia> Pkg.clone("git://github.com/BenConnault/DynamicDiscreteModels.jl.git")
 ~~~
 
@@ -69,7 +68,7 @@ For the purpose of this package, a "dynamic discrete model" is a discrete Markov
 - `m` is a (dx,dy,dx,dy) array that holds the Markov probabilities m[x,y,x',y'] of moving from (x,y) today to (x',y') tomorrow.
 - `mu` is a (dx,dy) array that holds the joint initial distribution of the chain.
 
-Any front-end implementation of a `DynamicDiscreteModel` will specify a mapping from a statistical parameter θ to the transition matrix `m` in a `calibrate!(model,parameter)` function. Being a back-end package, `DynamicDiscreteModels.jl` is agnostic as to the specific mapping, but [examples/toymodel.jl](examples/toymodel.jl) provides a simple example. In this example (x,y) is a Hidden Markov model where x moves from today to tomorrow according to the Markov transition matrix A(θ) and y is drawn conditional on x according to the emission/transition matrix B(θ):
+Any front-end implementation of a `DynamicDiscreteModel` will specify a mapping from a statistical parameter θ to the transition matrix `m` in a `coef!(model,parameter)` function. Being a back-end package, `DynamicDiscreteModels.jl` is agnostic as to the specific mapping, but [examples/toymodel.jl](examples/toymodel.jl) provides a simple example. In this example (x,y) is a Hidden Markov model where x moves from today to tomorrow according to the Markov transition matrix A(θ) and y is drawn conditional on x according to the emission/transition matrix B(θ):
 
 ~~~
 .
@@ -103,7 +102,7 @@ toymodel()=ToyModel(
   Array(Float64,dx),
   Array(Float64,dx))
 
-function calibrate!(model::ToyModel,theta::Tuple)
+function coef!(model::ToyModel,theta::Tuple)
 	p1,p2=theta[1],theta[2]
 	a=[p1 1-p1;1-p1 p1]
 	p3=(1-p2)/2
@@ -119,7 +118,7 @@ We can initiate a toy model, calibrate it to a true parameter value θ*=(.65,.5)
 ~~~julia
 julia> thetastar=(.65, .5);
 julia> model=toymodel();
-julia> calibrate!(model,thetastar);
+julia> coef!(model,thetastar);
 julia> data=simulate(model,100,100);
 julia> data[1]
 100-element Array{Int64,1}:
@@ -138,10 +137,10 @@ With the model and some data, we can find the most likely parameter value behind
 ~~~julia
 theta2eta(theta::Tuple)=[log(theta[1]/(1-theta[1])),log(theta[2]/(1-theta[2]))]
 eta2theta(eta::Array)=(exp(eta[1])/(1+exp(eta[1])),exp(eta[2])/(1+exp(eta[2])))
-calibrate!(model::ToyModel,eta::Array)=calibrate!(model,eta2theta(eta))
+coef!(model::ToyModel,eta::Array)=calibrate!(model,eta2theta(eta))
 ~~~
 
-Notice how `calibrate!()` will use multiple dispatch to choose between the `eta` and `theta` parametrizations. `mle()` and `em()` will dispatch on `parameter::Array` by default so keep this signature for a parametrization which plays nicely with numerical optimization.
+Notice how `coef!()` will use multiple dispatch to choose between the `eta` and `theta` parametrizations. `mle()` and `em()` will dispatch on `parameter::Array` by default so keep this signature for a parametrization which plays nicely with numerical optimization.
 
 We then simply call:
 

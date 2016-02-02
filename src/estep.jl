@@ -74,6 +74,6 @@ end
 # Wrapper to handle several time-series of observations.
 function estep(model::DynamicDiscreteModel,data::Array{Array,1},w::Array{Float64,4})
 	for i=1:length(data)
-		filtersmoother(model,data[i],w)
+		estep(model,data[i],w)
 	end
 end
