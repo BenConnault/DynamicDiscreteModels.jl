@@ -14,7 +14,7 @@ julia> model=myawesomemodel(trueparameter)
 julia> #generate data from the model:
 julia> data=rand(model,1000);         #1 time series with 1000 observations
 julia> data=rand(model,100,10);       #10 time series with 100 observations each
-julia> data=rand(model,[100,120]);    #2 time series with 100 and 120 observations resp.
+julia> data=rand(model,[100,120,115]);    #3 time series with 100, 120 and 115 obs.
 ~~~
 
 Parameter estimation:
@@ -58,7 +58,7 @@ See **Usage** below for a simple example and see [HiddenMarkovModels.jl](https:/
 ## Installation
 
 ~~~julia
-julia> Pkg.clone("git://github.com/BenConnault/DynamicDiscreteModels.jl.git")
+julia> Pkg.add("DynamicDiscreteModels")
 ~~~
 
 ## Usage
