@@ -3,6 +3,7 @@ module DynamicDiscreteModels
 include("statisticalmodels-stopgap.jl")
 include("statisticalmodels-sugar.jl")
 
+#need to import StatsBase.StatisticalModel once I make the transition
 import Optim
 import Distributions: Dirichlet, wsample 
 
