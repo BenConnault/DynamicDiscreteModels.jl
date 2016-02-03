@@ -16,7 +16,7 @@ end
 
 
 function loglikelihood_jac(model::StatisticalModel,data,parameter)
-	coef!(model,parameter)
+	coef_jac!(model,parameter)
 	loglikelihood_jac(model,data)
 end
 
