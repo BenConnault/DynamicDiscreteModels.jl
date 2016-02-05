@@ -2,6 +2,8 @@ import StatsBase.StatisticalModel
 import Base.rand
 using Optim
 
+import Distributions: loglikelihood, dim
+
 export coef!,rand,loglikelihood,dim,mle
 
 coef!(model::StatisticalModel,parameter)=error("Method coef!(model::$(typeof(model)),parameter) must be implemented for $(typeof(model)).")
