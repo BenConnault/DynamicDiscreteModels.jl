@@ -1,6 +1,56 @@
 #Evaluating the likelihood requires only filtering ("forward").
 
-# NON-JACOBIAN METHODS
+# WRAPPER FUNCTIONS
+
+
+#data: several iid individuals
+function loglikelihood{S<:Array}(model::StatisticalModel,data::Array{S,1})
+	n=length(data)
+	T=0.0
+	llk=0.0
+	for i=1:n
+		Ti=float(length(data[i]))
+		llk+=loglikelihood(model,data[i])*Ti
+		T+=Ti
+	end
+	llk/T
+end
+
+
+
+#data: several iid individuals
+function loglikelihood_jac(model::StatisticalModel,data::Array{Array,1})
+	n=length(data)
+	T=0.0
+	llk,llkjac=loglikelihood_jac(model,data[1])
+	for i=2:n
+		Ti=float(length(data[i]))
+		temp=loglikelihood_jac(model,data[i])
+		llk+=temp[1]*Ti
+		llkjac+=temp[2]*Ti
+		T+=Ti
+	end
+	llk/T,llkjac/T
+end
+
+
+
+#simulate iid individuals with heterogeneous number of periods of observation
+function rand(model::StatisticalModel,T::Array{Int,1})
+	n=length(T) 
+	data=Array(Array,n)
+	for i=1:n
+		data[i]=rand(model,T[i])
+	end
+	data
+end
+
+# (T,n) -> n iid individuals with T periods of observation each
+rand(model::StatisticalModel,T,n)=rand(model,fill(T,n))
+# rand(model::StatisticalModel,Tn::Tuple{Int,Int})=rand(model,Tn[1],Tn[2])
+
+
+# CORE NON-JACOBIAN METHODS
 
 function filterstep!(model::DynamicDiscreteModel,iy,jy)
 	dx=length(model.phi)
@@ -40,7 +90,7 @@ end
 
 
 
-# JACOBIAN METHODS
+# CORE JACOBIAN METHODS
 
 function filterstep_jac!(model::DynamicDiscreteModel,iy,jy)
 	dx,dtheta=size(model.phijac)
@@ -103,7 +153,7 @@ function loglikelihood_jac(model::DynamicDiscreteModel,data::Array{Int,1})
 			lambdajac[itheta]+=model.rhojac[itheta]/model.rho[1]
 		end
 	end
-	lambda,lambdajac
+	lambda/length(data),lambdajac/length(data)
 end	
 
 

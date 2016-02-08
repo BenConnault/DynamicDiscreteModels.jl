@@ -14,6 +14,19 @@ loglikelihood(model::StatisticalModel,data)=error("Method loglikelihood(model::$
 #return the dimension of the parameter: used to provide a random starting value when calling mle()
 dim(model::StatisticalModel)=error("If you want to use the default MLE method on a $(typeof(model)), you must define dim(model::$(typeof(model))).")
 
+function loglikelihood(model::StatisticalModel,data,parameter)
+	coef!(model,parameter)
+	loglikelihood(model,data)
+end
+
+
+function loglikelihood_jac(model::StatisticalModel,data,parameter)
+	coef_jac!(model,parameter)
+	loglikelihood_jac(model,data)
+end
+
+
+
 
 function mle_nojac(model::StatisticalModel,data,thetai::Array{Float64,1}=rand(dim(model)),L=15000)
 	ff(theta)=-loglikelihood(model,data,theta)
