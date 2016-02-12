@@ -8,8 +8,7 @@ import Optim
 import Distributions: Dirichlet, wsample 
 
 
-
-export coef!, rand, loglikelihood, mle, dim,
+export coef!, coef_jac!, rand, loglikelihood, loglikelihood_jac, dim, mle,
 	DynamicDiscreteModel, estep, em, viterbi, hmm2ddm!
 
 

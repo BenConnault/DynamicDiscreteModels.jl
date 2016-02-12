@@ -1,14 +1,33 @@
 using Base.Test
 include("../examples/toymodel.jl")
 
+
 theta0=(.65, .5)
 model=toymodel()
 coef!(model,theta0)
 data=rand(model,100,100)
+
 thetahat=eta2theta(mle(model,data))
 thetahat2=eta2theta(em(model,data))
-
 @test norm(collect(thetahat)-collect(thetahat2))<1e-3
+
+
+### JACOBIANS
+
+using Calculus
+
+data=rand(model,10)
+eta0=theta2eta(theta0)
+ff(eta)=loglikelihood(model,data,eta)
+@test norm(vec(Calculus.gradient(ff,eta0))-vec(loglikelihood_jac(model,data,eta0)[2])) < 1e-5
+
+data=rand(model,10,100)
+eta0=theta2eta(theta0)
+ff(eta)=loglikelihood(model,data,eta)
+@test norm(vec(Calculus.gradient(ff,eta0))-vec(loglikelihood_jac(model,data,eta0)[2])) < 1e-5
+
+
+
 
 #make tests deterministics (using a seed)
 #add tests for jacobian methods

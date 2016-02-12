@@ -4,7 +4,7 @@
 
 
 #data: several iid individuals
-function loglikelihood{S<:Array}(model::StatisticalModel,data::Array{S,1})
+function loglikelihood{S<:Array}(model::DynamicDiscreteModel,data::Array{S,1})
 	n=length(data)
 	T=0.0
 	llk=0.0
@@ -19,11 +19,13 @@ end
 
 
 #data: several iid individuals
-function loglikelihood_jac(model::StatisticalModel,data::Array{Array,1})
+function loglikelihood_jac{S<:Array}(model::DynamicDiscreteModel,data::Array{S,1})
+	dtheta=size(model.rhojac)
 	n=length(data)
 	T=0.0
-	llk,llkjac=loglikelihood_jac(model,data[1])
-	for i=2:n
+	llk=0.0
+	llkjac=zeros(dtheta)
+	for i=1:n
 		Ti=float(length(data[i]))
 		temp=loglikelihood_jac(model,data[i])
 		llk+=temp[1]*Ti
@@ -36,7 +38,7 @@ end
 
 
 #simulate iid individuals with heterogeneous number of periods of observation
-function rand(model::StatisticalModel,T::Array{Int,1})
+function rand(model::DynamicDiscreteModel,T::Array{Int,1})
 	n=length(T) 
 	data=Array(Array,n)
 	for i=1:n
@@ -46,7 +48,7 @@ function rand(model::StatisticalModel,T::Array{Int,1})
 end
 
 # (T,n) -> n iid individuals with T periods of observation each
-rand(model::StatisticalModel,T,n)=rand(model,fill(T,n))
+rand(model::DynamicDiscreteModel,T,n)=rand(model,fill(T,n))
 # rand(model::StatisticalModel,Tn::Tuple{Int,Int})=rand(model,Tn[1],Tn[2])
 
 

@@ -13,7 +13,7 @@ function hmm2ddm!(model::DynamicDiscreteModel,a,b)
 	end
 end
 
-#multiple dispatch will detech jacobian or no jacobian
+#multiple dispatch will detect jacobian or no jacobian
 function hmm2ddm!(model::DynamicDiscreteModel,a,b,ajac,bjac)
 	dx,dy,dtheta=size(bjac)
 	for jy=1:dy

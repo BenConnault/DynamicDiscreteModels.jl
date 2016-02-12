@@ -4,11 +4,13 @@ using Optim
 
 import Distributions: loglikelihood, dim
 
-export coef!,rand,loglikelihood,dim,mle
+export coef!, coef_jac!, rand, loglikelihood, loglikelihood_jac, dim, mle
 
 coef!(model::StatisticalModel,parameter)=error("Method coef!(model::$(typeof(model)),parameter) must be implemented for $(typeof(model)).")
+coef_jac!(model::StatisticalModel,parameter)=error("Method coef_jac!(model::$(typeof(model)),parameter) must be implemented for $(typeof(model)).")
 rand(model::StatisticalModel,T::Int)=error("Method rand(model::$(typeof(model)),T::Int) must be implemented for $(typeof(model)).")
-loglikelihood(model::StatisticalModel,data)=error("Method loglikelihood(model::$(typeof(model)),data,parameter) must be implemented for $(typeof(model)).")
+loglikelihood(model::StatisticalModel,data)=error("Method loglikelihood(model::$(typeof(model)),data) must be implemented for $(typeof(model)).")
+loglikelihood_jac(model::StatisticalModel,data)=error("Method loglikelihood_jac(model::$(typeof(model)),data) must be implemented for $(typeof(model)).")
 
 
 #return the dimension of the parameter: used to provide a random starting value when calling mle()
@@ -19,36 +21,44 @@ function loglikelihood(model::StatisticalModel,data,parameter)
 	loglikelihood(model,data)
 end
 
-
 function loglikelihood_jac(model::StatisticalModel,data,parameter)
 	coef_jac!(model,parameter)
 	loglikelihood_jac(model,data)
 end
 
-
-
-
 function mle_nojac(model::StatisticalModel,data,thetai::Array{Float64,1}=rand(dim(model)),L=15000)
-	ff(theta)=-loglikelihood(model,data,theta)
+	fcalls=0
+	function ff(theta)
+		fcalls+=1
+		-loglikelihood(model,data,theta)
+	end
 	df=Optim.DifferentiableFunction(ff)	
 	ret = Optim.optimize(df, thetai,method=:cg,iterations=L)
-	println("  no jacobian, $(ret.iterations) iterations, $(ret.f_calls) evaluations, final log-likelihood: $(round(-ret.f_minimum,4))")
+	println("  no jacobian, $(ret.iterations) iterations, $fcalls ff evaluations, final log-likelihood: $(round(-ret.f_minimum,4))")
 	ret.minimum
 end
 
 function mle_jac(model::StatisticalModel,data,thetai::Array{Float64,1}=rand(dim(model)),L=15000)
-	ff(theta)=-loglikelihood(model,data,theta)
+	fcalls=0
+	fjcalls=0
+	ffjcalls=0
+	function ff(theta)
+		fcalls+=1
+		-loglikelihood(model,data,theta)
+	end
 	function fj!(theta,jac)
+		fjcalls+=1
 		jac[:]=-loglikelihood_jac(model,data,theta)[2]
 	end
 	function ffj!(theta,jac)
-		res=-loglikelihood_jac(model,data,theta)
-		jac[:]=res[2]
-		res[1]
+		ffjcalls+=1
+		res=loglikelihood_jac(model,data,theta)
+		jac[:]=-res[2]
+		-res[1]
 	end
 	df=Optim.DifferentiableFunction(ff,fj!,ffj!)
 	ret = Optim.optimize(df, thetai,method=:cg,iterations=L)
-	println("  with jacobian, $(ret.iterations) iterations, $(ret.f_calls) evaluations, final log-likelihood: $(round(-ret.f_minimum,4))")
+	println("  with jacobian, $(ret.iterations) iterations, ($fcalls,$fjcalls,$ffjcalls) (ff,fj,ffj) evaluations, final log-likelihood: $(round(-ret.f_minimum,4))")
 	ret.minimum
 end
 

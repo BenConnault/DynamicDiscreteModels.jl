@@ -18,3 +18,17 @@ function rand(model::DynamicDiscreteModel,T::Int)
 end
 
 
+#simulate iid individuals with heterogeneous number of periods of observation
+function rand(model::DynamicDiscreteModel,T::Array{Int,1})
+	n=length(T) 
+	data=Array(Array,n)
+	for i=1:n
+		data[i]=rand(model,T[i])
+	end
+	data
+end
+
+# (T,n) -> n iid individuals with T periods of observation each
+rand(model::DynamicDiscreteModel,T,n)=rand(model,fill(T,n))
+# rand(model::StatisticalModel,Tn::Tuple{Int,Int})=rand(model,Tn[1],Tn[2])
+
