@@ -30,7 +30,9 @@ function mle_nojac(model::StatisticalModel,data,thetai::Array{Float64,1}=rand(di
 	fcalls=0
 	function ff(theta)
 		fcalls+=1
-		-loglikelihood(model,data,theta)
+		llk=-loglikelihood(model,data,theta)
+		println(fcalls,": ",round(theta,3),", ",round(llk,3))
+		llk
 	end
 	df=Optim.DifferentiableFunction(ff)	
 	ret = Optim.optimize(df, thetai,method=:cg,iterations=L)

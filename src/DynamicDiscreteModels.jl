@@ -9,12 +9,14 @@ import Distributions: Dirichlet, wsample
 
 
 export coef!, coef_jac!, rand, loglikelihood, loglikelihood_jac, dim, mle,
-	DynamicDiscreteModel, estep, em, viterbi, hmm2ddm!
+	DynamicDiscreteModel, estep, em, viterbi, hmm2ddm!,
+	filtr
 
 
 
 include("dynamicdiscretemodel.jl")
 include("simulate.jl")
+include("filtering.jl")
 include("estep.jl")
 include("emalgorithm.jl")
 include("viterbi.jl")
